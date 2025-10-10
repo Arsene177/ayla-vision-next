@@ -1,16 +1,71 @@
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
-import { useState } from "react";
+import { Menu, X, Shield } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Session } from "@supabase/supabase-js";
 
 const Navigation = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+      }
+    );
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (session?.user) {
+      checkAdminRole();
+    } else {
+      setIsAdmin(false);
+    }
+  }, [session]);
+
+  const checkAdminRole = async () => {
+    try {
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session?.user?.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      setIsAdmin(!!data);
+    } catch (error) {
+      console.error("Error checking admin role:", error);
+      setIsAdmin(false);
+    }
+  };
 
   const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
-      setIsOpen(false);
+    if (location.pathname !== "/") {
+      navigate("/");
+      setTimeout(() => {
+        const element = document.getElementById(id);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 100);
+    } else {
+      const element = document.getElementById(id);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
     }
+    setIsOpen(false);
   };
 
   return (
@@ -45,6 +100,16 @@ const Navigation = () => {
             >
               Contact
             </button>
+            {isAdmin && (
+              <Button
+                onClick={() => navigate("/admin")}
+                variant="outline"
+                className="gap-2 glow-purple"
+              >
+                <Shield className="w-4 h-4" />
+                Admin
+              </Button>
+            )}
             <Button
               onClick={() => scrollToSection("contact")}
               className="bg-primary text-primary-foreground hover:bg-primary/90 glow-cyan"
@@ -89,6 +154,19 @@ const Navigation = () => {
             >
               Contact
             </button>
+            {isAdmin && (
+              <Button
+                onClick={() => {
+                  navigate("/admin");
+                  setIsOpen(false);
+                }}
+                variant="outline"
+                className="w-full gap-2"
+              >
+                <Shield className="w-4 h-4" />
+                Admin Panel
+              </Button>
+            )}
             <Button
               onClick={() => scrollToSection("contact")}
               className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
