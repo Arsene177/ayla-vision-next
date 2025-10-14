@@ -4,8 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { LogOut, Mail, Phone, MessageSquare, Trash2, CheckCircle } from "lucide-react";
+import { LogOut, Mail, Phone, MessageSquare, Trash2, CheckCircle, UserPlus } from "lucide-react";
 import { Session } from "@supabase/supabase-js";
 import {
   AlertDialog,
@@ -35,6 +37,9 @@ const Admin = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState<ContactMessage[]>([]);
+  const [newAdminEmail, setNewAdminEmail] = useState("");
+  const [newAdminPassword, setNewAdminPassword] = useState("");
+  const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -137,6 +142,43 @@ const Admin = () => {
     }
   };
 
+  const handleCreateAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsCreatingAdmin(true);
+
+    try {
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: newAdminEmail,
+        password: newAdminPassword,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+        },
+      });
+
+      if (signUpError) throw signUpError;
+
+      if (signUpData.user) {
+        const { error: roleError } = await supabase
+          .from("user_roles")
+          .insert({
+            user_id: signUpData.user.id,
+            role: "admin",
+          });
+
+        if (roleError) throw roleError;
+
+        toast.success("New admin created successfully");
+        setNewAdminEmail("");
+        setNewAdminPassword("");
+      }
+    } catch (error: any) {
+      console.error("Error creating admin:", error);
+      toast.error(error.message || "Failed to create admin");
+    } finally {
+      setIsCreatingAdmin(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -166,6 +208,42 @@ const Admin = () => {
         </div>
 
         <div className="grid gap-6">
+          <Card className="glass-card p-6">
+            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+              <UserPlus className="w-6 h-6 text-primary" />
+              Add New Admin
+            </h2>
+            <form onSubmit={handleCreateAdmin} className="space-y-4 max-w-md">
+              <div>
+                <Label htmlFor="adminEmail">Email</Label>
+                <Input
+                  id="adminEmail"
+                  type="email"
+                  value={newAdminEmail}
+                  onChange={(e) => setNewAdminEmail(e.target.value)}
+                  required
+                  placeholder="admin@example.com"
+                />
+              </div>
+              <div>
+                <Label htmlFor="adminPassword">Password</Label>
+                <Input
+                  id="adminPassword"
+                  type="password"
+                  value={newAdminPassword}
+                  onChange={(e) => setNewAdminPassword(e.target.value)}
+                  required
+                  placeholder="••••••••"
+                  minLength={6}
+                />
+              </div>
+              <Button type="submit" disabled={isCreatingAdmin} className="gap-2">
+                <UserPlus className="w-4 h-4" />
+                {isCreatingAdmin ? "Creating..." : "Create Admin"}
+              </Button>
+            </form>
+          </Card>
+
           <Card className="glass-card p-6">
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
               <MessageSquare className="w-6 h-6 text-primary" />
