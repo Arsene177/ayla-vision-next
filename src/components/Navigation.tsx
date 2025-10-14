@@ -72,7 +72,13 @@ const Navigation = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 glass-card border-b border-border/30">
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gradient">AYLIA</h1>
+          <h1 
+            className="text-2xl font-bold text-gradient cursor-default select-none"
+            onDoubleClick={() => navigate("/auth")}
+            title="AYLIA"
+          >
+            AYLIA
+          </h1>
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center gap-8">
@@ -110,12 +116,6 @@ const Navigation = () => {
                 Admin
               </Button>
             )}
-            <Button
-              onClick={() => scrollToSection("contact")}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 glow-cyan"
-            >
-              Get Started
-            </Button>
           </div>
 
           {/* Mobile Menu Button */}
@@ -167,12 +167,6 @@ const Navigation = () => {
                 Admin Panel
               </Button>
             )}
-            <Button
-              onClick={() => scrollToSection("contact")}
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              Get Started
-            </Button>
           </div>
         )}
       </div>
