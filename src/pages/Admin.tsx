@@ -58,10 +58,10 @@ const Admin = () => {
   useEffect(() => {
     if (session?.user) {
       checkAdminRole();
-    } else {
+    } else if (session === null && !loading) {
       navigate("/auth");
     }
-  }, [session, navigate]);
+  }, [session, navigate, loading]);
 
   const checkAdminRole = async () => {
     try {

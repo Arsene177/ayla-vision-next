@@ -55,27 +55,20 @@ const Auth = () => {
   };
 
   useEffect(() => {
-    // Set up auth state listener
+    // Set up auth state listener - only redirect on new auth events (login/signup)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         setSession(session);
-        if (session?.user) {
-          // Defer the role check to avoid deadlock
-          setTimeout(() => {
-            checkAdminAndRedirect(session.user.id);
-          }, 0);
+        // Only redirect after successful sign in/up, not on initial load
+        if (session?.user && (event === 'SIGNED_IN' || event === 'USER_UPDATED')) {
+          checkAdminAndRedirect(session.user.id);
         }
       }
     );
 
-    // Check for existing session
+    // Check for existing session (but don't redirect)
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session?.user) {
-        setTimeout(() => {
-          checkAdminAndRedirect(session.user.id);
-        }, 0);
-      }
     });
 
     return () => subscription.unsubscribe();
