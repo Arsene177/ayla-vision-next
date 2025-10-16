@@ -38,7 +38,7 @@ const Auth = () => {
       (_event, session) => {
         setSession(session);
         if (session) {
-          navigate("/");
+          navigate("/admin");
         }
       }
     );
@@ -47,7 +47,7 @@ const Auth = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session) {
-        navigate("/");
+        navigate("/admin");
       }
     });
 
