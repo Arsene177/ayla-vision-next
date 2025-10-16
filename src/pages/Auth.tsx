@@ -31,8 +31,10 @@ const signUpSchema = z.object({
 const Auth = () => {
   const navigate = useNavigate();
   const [session, setSession] = useState<Session | null>(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const checkAdminAndRedirect = async (userId: string) => {
+    setIsRedirecting(true);
     try {
       const { data } = await supabase
         .from("user_roles")
@@ -124,6 +126,14 @@ const Auth = () => {
       toast.error(error.message || "Failed to sign up");
     }
   };
+
+  if (session && isRedirecting) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse text-xl">Redirecting...</div>
+      </div>
+    );
+  }
 
   if (session) {
     return null;
