@@ -32,13 +32,36 @@ const Auth = () => {
   const navigate = useNavigate();
   const [session, setSession] = useState<Session | null>(null);
 
+  const checkAdminAndRedirect = async (userId: string) => {
+    try {
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      if (data) {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
+    } catch (error) {
+      console.error("Error checking admin role:", error);
+      navigate("/");
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setSession(session);
-        if (session) {
-          navigate("/admin");
+        if (session?.user) {
+          // Defer the role check to avoid deadlock
+          setTimeout(() => {
+            checkAdminAndRedirect(session.user.id);
+          }, 0);
         }
       }
     );
@@ -46,8 +69,10 @@ const Auth = () => {
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session) {
-        navigate("/admin");
+      if (session?.user) {
+        setTimeout(() => {
+          checkAdminAndRedirect(session.user.id);
+        }, 0);
       }
     });
 
