@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { LogOut, Mail, Phone, MessageSquare, Trash2, CheckCircle, UserPlus } from "lucide-react";
+import { LogOut, Mail, Phone, MessageSquare, Trash2, CheckCircle, UserPlus, FolderKanban, Edit, Plus } from "lucide-react";
 import { Session } from "@supabase/supabase-js";
 import {
   AlertDialog,
@@ -31,6 +32,15 @@ interface ContactMessage {
   created_at: string;
 }
 
+interface FeaturedProject {
+  id: string;
+  title: string;
+  description: string;
+  tags: string[];
+  status: string;
+  display_order: number;
+}
+
 const Admin = () => {
   const navigate = useNavigate();
   const [session, setSession] = useState<Session | null>(null);
@@ -40,6 +50,16 @@ const Admin = () => {
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [newAdminPassword, setNewAdminPassword] = useState("");
   const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
+  const [projects, setProjects] = useState<FeaturedProject[]>([]);
+  const [editingProject, setEditingProject] = useState<FeaturedProject | null>(null);
+  const [isAddingProject, setIsAddingProject] = useState(false);
+  const [projectForm, setProjectForm] = useState({
+    title: "",
+    description: "",
+    tags: "",
+    status: "",
+    display_order: 0,
+  });
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -77,6 +97,7 @@ const Admin = () => {
       if (data) {
         setIsAdmin(true);
         fetchMessages();
+        fetchProjects();
       } else {
         toast.error("You don't have admin access");
         navigate("/");
@@ -139,6 +160,87 @@ const Admin = () => {
     } catch (error) {
       console.error("Error deleting message:", error);
       toast.error("Failed to delete message");
+    }
+  };
+
+  const fetchProjects = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("featured_projects")
+        .select("*")
+        .order("display_order", { ascending: true });
+
+      if (error) throw error;
+      setProjects(data || []);
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+      toast.error("Failed to load projects");
+    }
+  };
+
+  const handleProjectSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const projectData = {
+        title: projectForm.title,
+        description: projectForm.description,
+        tags: projectForm.tags.split(",").map((tag) => tag.trim()),
+        status: projectForm.status,
+        display_order: projectForm.display_order,
+      };
+
+      if (editingProject) {
+        const { error } = await supabase
+          .from("featured_projects")
+          .update(projectData)
+          .eq("id", editingProject.id);
+
+        if (error) throw error;
+        toast.success("Project updated successfully");
+      } else {
+        const { error } = await supabase
+          .from("featured_projects")
+          .insert(projectData);
+
+        if (error) throw error;
+        toast.success("Project added successfully");
+      }
+
+      setProjectForm({ title: "", description: "", tags: "", status: "", display_order: 0 });
+      setEditingProject(null);
+      setIsAddingProject(false);
+      fetchProjects();
+    } catch (error: any) {
+      console.error("Error saving project:", error);
+      toast.error(error.message || "Failed to save project");
+    }
+  };
+
+  const handleEditProject = (project: FeaturedProject) => {
+    setEditingProject(project);
+    setProjectForm({
+      title: project.title,
+      description: project.description,
+      tags: project.tags.join(", "),
+      status: project.status,
+      display_order: project.display_order,
+    });
+    setIsAddingProject(true);
+  };
+
+  const handleDeleteProject = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from("featured_projects")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+      toast.success("Project deleted successfully");
+      fetchProjects();
+    } catch (error: any) {
+      console.error("Error deleting project:", error);
+      toast.error(error.message || "Failed to delete project");
     }
   };
 
@@ -208,6 +310,147 @@ const Admin = () => {
         </div>
 
         <div className="grid gap-6">
+          <Card className="glass-card p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold flex items-center gap-2">
+                <FolderKanban className="w-6 h-6 text-primary" />
+                Featured Projects ({projects.length})
+              </h2>
+              <Button
+                onClick={() => {
+                  setIsAddingProject(!isAddingProject);
+                  setEditingProject(null);
+                  setProjectForm({ title: "", description: "", tags: "", status: "", display_order: 0 });
+                }}
+                className="gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                {isAddingProject ? "Cancel" : "Add Project"}
+              </Button>
+            </div>
+
+            {isAddingProject && (
+              <form onSubmit={handleProjectSubmit} className="space-y-4 mb-6 p-4 border rounded-lg bg-muted/30">
+                <h3 className="text-lg font-semibold">
+                  {editingProject ? "Edit Project" : "Add New Project"}
+                </h3>
+                <div>
+                  <Label htmlFor="projectTitle">Title</Label>
+                  <Input
+                    id="projectTitle"
+                    value={projectForm.title}
+                    onChange={(e) => setProjectForm({ ...projectForm, title: e.target.value })}
+                    required
+                    placeholder="E-Commerce Platform"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="projectDescription">Description</Label>
+                  <Textarea
+                    id="projectDescription"
+                    value={projectForm.description}
+                    onChange={(e) => setProjectForm({ ...projectForm, description: e.target.value })}
+                    required
+                    placeholder="Full-featured online store..."
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="projectTags">Tags (comma-separated)</Label>
+                  <Input
+                    id="projectTags"
+                    value={projectForm.tags}
+                    onChange={(e) => setProjectForm({ ...projectForm, tags: e.target.value })}
+                    required
+                    placeholder="React, Node.js, MongoDB"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="projectStatus">Status</Label>
+                  <Input
+                    id="projectStatus"
+                    value={projectForm.status}
+                    onChange={(e) => setProjectForm({ ...projectForm, status: e.target.value })}
+                    required
+                    placeholder="Deployed"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="projectOrder">Display Order</Label>
+                  <Input
+                    id="projectOrder"
+                    type="number"
+                    value={projectForm.display_order}
+                    onChange={(e) => setProjectForm({ ...projectForm, display_order: parseInt(e.target.value) })}
+                    required
+                    placeholder="0"
+                  />
+                </div>
+                <Button type="submit" className="gap-2">
+                  {editingProject ? "Update Project" : "Add Project"}
+                </Button>
+              </form>
+            )}
+
+            {projects.length === 0 ? (
+              <p className="text-center text-muted-foreground py-12">No projects yet</p>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-4">
+                {projects.map((project) => (
+                  <Card key={project.id} className="p-4 border-border/50">
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-start">
+                        <h3 className="text-lg font-semibold">{project.title}</h3>
+                        <Badge>{project.status}</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{project.description}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {project.tags.map((tag, idx) => (
+                          <Badge key={idx} variant="secondary" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleEditProject(project)}
+                          variant="outline"
+                          className="gap-2"
+                        >
+                          <Edit className="w-4 h-4" />
+                          Edit
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="destructive" className="gap-2">
+                              <Trash2 className="w-4 h-4" />
+                              Delete
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Project</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete this project? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteProject(project.id)}>
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </Card>
+
           <Card className="glass-card p-6">
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
               <UserPlus className="w-6 h-6 text-primary" />

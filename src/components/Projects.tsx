@@ -1,46 +1,38 @@
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Project {
+  id: string;
+  title: string;
+  description: string;
+  tags: string[];
+  status: string;
+  display_order: number;
+}
 
 const Projects = () => {
-  const projects = [
-    {
-      title: "E-Commerce Platform",
-      description: "Full-featured online store with payment integration and inventory management",
-      tags: ["React", "Node.js", "Stripe", "MongoDB"],
-      status: "Deployed",
-    },
-    {
-      title: "Healthcare Management System",
-      description: "Patient management and appointment scheduling system for medical clinics",
-      tags: ["React Native", "Firebase", "TypeScript"],
-      status: "In Production",
-    },
-    {
-      title: "Social Media Dashboard",
-      description: "Analytics and management tool for multiple social media platforms",
-      tags: ["Next.js", "PostgreSQL", "TailwindCSS"],
-      status: "Deployed",
-    },
-    {
-      title: "Real Estate Marketplace",
-      description: "Property listing and search platform with virtual tours",
-      tags: ["React", "Express", "AWS", "Three.js"],
-      status: "Deployed",
-    },
-    {
-      title: "Educational Learning App",
-      description: "Interactive learning platform with gamification and progress tracking",
-      tags: ["React Native", "Supabase", "Redux"],
-      status: "In Production",
-    },
-    {
-      title: "Fitness Tracking App",
-      description: "Personal fitness tracker with workout plans and nutrition guidance",
-      tags: ["Flutter", "Node.js", "MongoDB"],
-      status: "Deployed",
-    },
-  ];
+  const [projects, setProjects] = useState<Project[]>([]);
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  const fetchProjects = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("featured_projects")
+        .select("*")
+        .order("display_order", { ascending: true });
+
+      if (error) throw error;
+      setProjects(data || []);
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+    }
+  };
 
   return (
     <section id="projects" className="py-32 bg-muted/30">
