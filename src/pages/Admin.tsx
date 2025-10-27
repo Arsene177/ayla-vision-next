@@ -21,6 +21,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 interface ContactMessage {
   id: string;
@@ -293,15 +299,18 @@ const Admin = () => {
     return null;
   }
 
+  const newMessagesCount = messages.filter(m => m.status === "new").length;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-muted/30">
       <div className="container mx-auto px-6 py-12">
-        <div className="flex justify-between items-center mb-8">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
             <h1 className="text-4xl font-bold mb-2">
               Admin <span className="text-gradient">Dashboard</span>
             </h1>
-            <p className="text-muted-foreground">Manage contact messages and site activities</p>
+            <p className="text-muted-foreground">Manage your projects, messages, and team</p>
           </div>
           <Button onClick={handleSignOut} variant="outline" className="gap-2">
             <LogOut className="w-4 h-4" />
@@ -309,267 +318,348 @@ const Admin = () => {
           </Button>
         </div>
 
-        <div className="grid gap-6">
+        {/* Stats Overview */}
+        <div className="grid md:grid-cols-3 gap-4 mb-8">
           <Card className="glass-card p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold flex items-center gap-2">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-lg bg-primary/10">
                 <FolderKanban className="w-6 h-6 text-primary" />
-                Featured Projects ({projects.length})
-              </h2>
-              <Button
-                onClick={() => {
-                  setIsAddingProject(!isAddingProject);
-                  setEditingProject(null);
-                  setProjectForm({ title: "", description: "", tags: "", status: "", display_order: 0 });
-                }}
-                className="gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                {isAddingProject ? "Cancel" : "Add Project"}
-              </Button>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Total Projects</p>
+                <h3 className="text-2xl font-bold">{projects.length}</h3>
+              </div>
             </div>
-
-            {isAddingProject && (
-              <form onSubmit={handleProjectSubmit} className="space-y-4 mb-6 p-4 border rounded-lg bg-muted/30">
-                <h3 className="text-lg font-semibold">
-                  {editingProject ? "Edit Project" : "Add New Project"}
-                </h3>
-                <div>
-                  <Label htmlFor="projectTitle">Title</Label>
-                  <Input
-                    id="projectTitle"
-                    value={projectForm.title}
-                    onChange={(e) => setProjectForm({ ...projectForm, title: e.target.value })}
-                    required
-                    placeholder="E-Commerce Platform"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="projectDescription">Description</Label>
-                  <Textarea
-                    id="projectDescription"
-                    value={projectForm.description}
-                    onChange={(e) => setProjectForm({ ...projectForm, description: e.target.value })}
-                    required
-                    placeholder="Full-featured online store..."
-                    rows={3}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="projectTags">Tags (comma-separated)</Label>
-                  <Input
-                    id="projectTags"
-                    value={projectForm.tags}
-                    onChange={(e) => setProjectForm({ ...projectForm, tags: e.target.value })}
-                    required
-                    placeholder="React, Node.js, MongoDB"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="projectStatus">Status</Label>
-                  <Input
-                    id="projectStatus"
-                    value={projectForm.status}
-                    onChange={(e) => setProjectForm({ ...projectForm, status: e.target.value })}
-                    required
-                    placeholder="Deployed"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="projectOrder">Display Order</Label>
-                  <Input
-                    id="projectOrder"
-                    type="number"
-                    value={projectForm.display_order}
-                    onChange={(e) => setProjectForm({ ...projectForm, display_order: parseInt(e.target.value) })}
-                    required
-                    placeholder="0"
-                  />
-                </div>
-                <Button type="submit" className="gap-2">
-                  {editingProject ? "Update Project" : "Add Project"}
-                </Button>
-              </form>
-            )}
-
-            {projects.length === 0 ? (
-              <p className="text-center text-muted-foreground py-12">No projects yet</p>
-            ) : (
-              <div className="grid md:grid-cols-2 gap-4">
-                {projects.map((project) => (
-                  <Card key={project.id} className="p-4 border-border/50">
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-start">
-                        <h3 className="text-lg font-semibold">{project.title}</h3>
-                        <Badge>{project.status}</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{project.description}</p>
-                      <div className="flex flex-wrap gap-2">
-                        {project.tags.map((tag, idx) => (
-                          <Badge key={idx} variant="secondary" className="text-xs">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                      <div className="flex gap-2 pt-2">
-                        <Button
-                          size="sm"
-                          onClick={() => handleEditProject(project)}
-                          variant="outline"
-                          className="gap-2"
-                        >
-                          <Edit className="w-4 h-4" />
-                          Edit
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button size="sm" variant="destructive" className="gap-2">
-                              <Trash2 className="w-4 h-4" />
-                              Delete
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Project</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete this project? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDeleteProject(project.id)}>
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            )}
           </Card>
-
+          
           <Card className="glass-card p-6">
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <UserPlus className="w-6 h-6 text-primary" />
-              Add New Admin
-            </h2>
-            <form onSubmit={handleCreateAdmin} className="space-y-4 max-w-md">
-              <div>
-                <Label htmlFor="adminEmail">Email</Label>
-                <Input
-                  id="adminEmail"
-                  type="email"
-                  value={newAdminEmail}
-                  onChange={(e) => setNewAdminEmail(e.target.value)}
-                  required
-                  placeholder="admin@example.com"
-                />
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-lg bg-primary/10">
+                <MessageSquare className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <Label htmlFor="adminPassword">Password</Label>
-                <Input
-                  id="adminPassword"
-                  type="password"
-                  value={newAdminPassword}
-                  onChange={(e) => setNewAdminPassword(e.target.value)}
-                  required
-                  placeholder="••••••••"
-                  minLength={6}
-                />
+                <p className="text-sm text-muted-foreground">Total Messages</p>
+                <h3 className="text-2xl font-bold">{messages.length}</h3>
               </div>
-              <Button type="submit" disabled={isCreatingAdmin} className="gap-2">
-                <UserPlus className="w-4 h-4" />
-                {isCreatingAdmin ? "Creating..." : "Create Admin"}
-              </Button>
-            </form>
+            </div>
           </Card>
-
+          
           <Card className="glass-card p-6">
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <MessageSquare className="w-6 h-6 text-primary" />
-              Contact Messages ({messages.length})
-            </h2>
-
-            {messages.length === 0 ? (
-              <p className="text-center text-muted-foreground py-12">No messages yet</p>
-            ) : (
-              <div className="space-y-4">
-                {messages.map((message) => (
-                  <Card key={message.id} className="p-6 border-border/50">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="text-xl font-semibold">{message.name}</h3>
-                        <div className="flex flex-wrap gap-3 mt-2 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Mail className="w-4 h-4" />
-                            {message.email}
-                          </span>
-                          {message.phone && (
-                            <span className="flex items-center gap-1">
-                              <Phone className="w-4 h-4" />
-                              {message.phone}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={message.status === "new" ? "default" : "secondary"}>
-                          {message.status}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(message.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-
-                    <p className="text-muted-foreground mb-4 whitespace-pre-wrap">
-                      {message.message}
-                    </p>
-
-                    <div className="flex gap-2">
-                      {message.status === "new" && (
-                        <Button
-                          size="sm"
-                          onClick={() => updateMessageStatus(message.id, "read")}
-                          variant="outline"
-                          className="gap-2"
-                        >
-                          <CheckCircle className="w-4 h-4" />
-                          Mark as Read
-                        </Button>
-                      )}
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button size="sm" variant="destructive" className="gap-2">
-                            <Trash2 className="w-4 h-4" />
-                            Delete
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Message</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete this message? This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => deleteMessage(message.id)}>
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </Card>
-                ))}
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-lg bg-destructive/10">
+                <Mail className="w-6 h-6 text-destructive" />
               </div>
-            )}
+              <div>
+                <p className="text-sm text-muted-foreground">New Messages</p>
+                <h3 className="text-2xl font-bold">{newMessagesCount}</h3>
+              </div>
+            </div>
           </Card>
         </div>
+
+        {/* Expandable Sections */}
+        <Accordion type="multiple" defaultValue={["projects", "messages"]} className="space-y-4">
+          {/* Featured Projects Section */}
+          <AccordionItem value="projects" className="glass-card border-0 rounded-lg overflow-hidden">
+            <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/30">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <FolderKanban className="w-5 h-5 text-primary" />
+                </div>
+                <div className="text-left">
+                  <h2 className="text-xl font-bold">Featured Projects</h2>
+                  <p className="text-sm text-muted-foreground">{projects.length} projects</p>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-6 pb-6">
+              <div className="pt-4">
+                <div className="flex justify-end mb-4">
+                  <Button
+                    onClick={() => {
+                      setIsAddingProject(!isAddingProject);
+                      setEditingProject(null);
+                      setProjectForm({ title: "", description: "", tags: "", status: "", display_order: 0 });
+                    }}
+                    className="gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    {isAddingProject ? "Cancel" : "Add Project"}
+                  </Button>
+                </div>
+
+                {isAddingProject && (
+                  <form onSubmit={handleProjectSubmit} className="space-y-4 mb-6 p-4 border rounded-lg bg-muted/30">
+                    <h3 className="text-lg font-semibold">
+                      {editingProject ? "Edit Project" : "Add New Project"}
+                    </h3>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="projectTitle">Title</Label>
+                        <Input
+                          id="projectTitle"
+                          value={projectForm.title}
+                          onChange={(e) => setProjectForm({ ...projectForm, title: e.target.value })}
+                          required
+                          placeholder="E-Commerce Platform"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="projectStatus">Status</Label>
+                        <Input
+                          id="projectStatus"
+                          value={projectForm.status}
+                          onChange={(e) => setProjectForm({ ...projectForm, status: e.target.value })}
+                          required
+                          placeholder="Deployed"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="projectDescription">Description</Label>
+                      <Textarea
+                        id="projectDescription"
+                        value={projectForm.description}
+                        onChange={(e) => setProjectForm({ ...projectForm, description: e.target.value })}
+                        required
+                        placeholder="Full-featured online store..."
+                        rows={3}
+                      />
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="projectTags">Tags (comma-separated)</Label>
+                        <Input
+                          id="projectTags"
+                          value={projectForm.tags}
+                          onChange={(e) => setProjectForm({ ...projectForm, tags: e.target.value })}
+                          required
+                          placeholder="React, Node.js, MongoDB"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="projectOrder">Display Order</Label>
+                        <Input
+                          id="projectOrder"
+                          type="number"
+                          value={projectForm.display_order}
+                          onChange={(e) => setProjectForm({ ...projectForm, display_order: parseInt(e.target.value) })}
+                          required
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                    <Button type="submit" className="gap-2">
+                      {editingProject ? "Update Project" : "Add Project"}
+                    </Button>
+                  </form>
+                )}
+
+                {projects.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-12">No projects yet</p>
+                ) : (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {projects.map((project) => (
+                      <Card key={project.id} className="p-4 border-border/50 hover:border-primary/50 transition-colors">
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-start">
+                            <h3 className="text-lg font-semibold">{project.title}</h3>
+                            <Badge>{project.status}</Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{project.description}</p>
+                          <div className="flex flex-wrap gap-2">
+                            {project.tags.map((tag, idx) => (
+                              <Badge key={idx} variant="secondary" className="text-xs">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                          <div className="flex gap-2 pt-2">
+                            <Button
+                              size="sm"
+                              onClick={() => handleEditProject(project)}
+                              variant="outline"
+                              className="gap-2"
+                            >
+                              <Edit className="w-4 h-4" />
+                              Edit
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button size="sm" variant="destructive" className="gap-2">
+                                  <Trash2 className="w-4 h-4" />
+                                  Delete
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Project</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete this project? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDeleteProject(project.id)}>
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Contact Messages Section */}
+          <AccordionItem value="messages" className="glass-card border-0 rounded-lg overflow-hidden">
+            <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/30">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <MessageSquare className="w-5 h-5 text-primary" />
+                </div>
+                <div className="text-left">
+                  <h2 className="text-xl font-bold">Contact Messages</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {messages.length} total • {newMessagesCount} new
+                  </p>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-6 pb-6">
+              <div className="pt-4">
+                {messages.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-12">No messages yet</p>
+                ) : (
+                  <div className="space-y-4">
+                    {messages.map((message) => (
+                      <Card key={message.id} className="p-6 border-border/50 hover:border-primary/50 transition-colors">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <h3 className="text-xl font-semibold">{message.name}</h3>
+                            <div className="flex flex-wrap gap-3 mt-2 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Mail className="w-4 h-4" />
+                                {message.email}
+                              </span>
+                              {message.phone && (
+                                <span className="flex items-center gap-1">
+                                  <Phone className="w-4 h-4" />
+                                  {message.phone}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={message.status === "new" ? "default" : "secondary"}>
+                              {message.status}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(message.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+
+                        <p className="text-muted-foreground mb-4 whitespace-pre-wrap">
+                          {message.message}
+                        </p>
+
+                        <div className="flex gap-2">
+                          {message.status === "new" && (
+                            <Button
+                              size="sm"
+                              onClick={() => updateMessageStatus(message.id, "read")}
+                              variant="outline"
+                              className="gap-2"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                              Mark as Read
+                            </Button>
+                          )}
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button size="sm" variant="destructive" className="gap-2">
+                                <Trash2 className="w-4 h-4" />
+                                Delete
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Message</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete this message? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => deleteMessage(message.id)}>
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Admin Management Section */}
+          <AccordionItem value="admin" className="glass-card border-0 rounded-lg overflow-hidden">
+            <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/30">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <UserPlus className="w-5 h-5 text-primary" />
+                </div>
+                <div className="text-left">
+                  <h2 className="text-xl font-bold">Admin Management</h2>
+                  <p className="text-sm text-muted-foreground">Add new administrators</p>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-6 pb-6">
+              <div className="pt-4">
+                <form onSubmit={handleCreateAdmin} className="space-y-4 max-w-md">
+                  <div>
+                    <Label htmlFor="adminEmail">Email</Label>
+                    <Input
+                      id="adminEmail"
+                      type="email"
+                      value={newAdminEmail}
+                      onChange={(e) => setNewAdminEmail(e.target.value)}
+                      required
+                      placeholder="admin@example.com"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="adminPassword">Password</Label>
+                    <Input
+                      id="adminPassword"
+                      type="password"
+                      value={newAdminPassword}
+                      onChange={(e) => setNewAdminPassword(e.target.value)}
+                      required
+                      placeholder="••••••••"
+                      minLength={6}
+                    />
+                  </div>
+                  <Button type="submit" disabled={isCreatingAdmin} className="gap-2">
+                    <UserPlus className="w-4 h-4" />
+                    {isCreatingAdmin ? "Creating..." : "Create Admin"}
+                  </Button>
+                </form>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </div>
     </div>
   );
