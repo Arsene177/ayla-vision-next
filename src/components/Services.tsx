@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { Code2, Smartphone, Zap, Shield, Layers, Rocket } from "lucide-react";
+import { Code2, Smartphone, Zap, Shield, Layers, Rocket, Palette } from "lucide-react";
 
 const Services = () => {
   const services = [
@@ -38,6 +38,12 @@ const Services = () => {
       title: "Deployment & Scaling",
       description: "Launch your product with confidence and scale seamlessly as your user base grows.",
       features: ["CI/CD Pipeline", "Cloud Infrastructure", "Performance Monitoring"],
+    },
+    {
+      icon: Palette,
+      title: "Graphic Design",
+      description: "Eye-catching visual designs that capture your brand identity and engage your audience across all platforms.",
+      features: ["Brand Identity & Logos", "UI/UX Design", "Marketing Materials"],
     },
   ];
 
